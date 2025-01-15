@@ -23,8 +23,8 @@ create table Diem (
     maMon int not null,
     diem int not null,
     primary key (maSV, maMon),
-    foreign key (maSV) references sinhVien(maSV) on delete cascade,
-    foreign key (maMon) references mon(maMon) on delete cascade,
+    foreign key (maSV) references sinhVien(maSV),
+    foreign key (maMon) references mon(maMon),
     check (diem >= 0 and diem <= 10)
 );
 

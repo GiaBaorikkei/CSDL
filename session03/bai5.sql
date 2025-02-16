@@ -14,6 +14,6 @@ insert into Employees (name, email, department, salary) values
 ('Tran Van C', 'tranvanc@example.com', 'HR', 45000.00), 
 ('Pham Thi D', 'phamthid@example.com', 'Marketing', 55000.00);
 
-select * from Emloyees where department = 'Sales';
+select * from Employees where department = 'Sales';
 
 

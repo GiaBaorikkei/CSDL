@@ -157,3 +157,74 @@ select d.order_detail_id, p.product_name, d.quantity, d.unit_price from orderdet
 join products p on d.product_id = p.product_id
 order by d.quantity desc;
 
+-- 9.1 Tạo thủ tục có tên proc_insert_employee nhận vào các thông tin cần thiết (trừ mã nhân viên và tổng doanh thu) , thực hiện thêm mới dữ liệu vào bảng nhân viên và trả về mã nhân viên vừa mới thêm.
+delimiter // 
+	create procedure proc_insert_employee (
+		employee_name_in varchar(100),
+		position_in varchar(50),
+		salary_in decimal(10,2)
+    )
+    begin 
+		
+        insert into employees (employee_name,position, salary) 
+        values(employee_name_in, position_in, salary_in);
+        
+        select employee_id from Employees
+        order by employee_id desc
+        limit 1;
+	end //
+delimiter ;
+
+call proc_insert_employee('Gia bảo', 'HR', 20000000);
+-- Tạo thủ tục có tên proc_get_orderdetails lọc những chi tiết đơn hàng dựa theo mã đặt hàng.
+delimiter //
+drop procedure if exists proc_get_orderdetails //
+	create procedure proc_get_orderdetails (order_id_in int)
+    begin
+		select * from orderdetails
+		where order_id = order_id_in;
+    end //
+delimiter ;
+
+call proc_get_orderdetails(1);
+-- Tạo thủ tục có tên proc_cal_total_amount_by_order nhận vào tham số là mã đơn hàng và trả về số lượng loại sản phẩm trong đơn hàng đó.
+delimiter //
+	drop procedure if exists proc_cal_total_amount_by_order //
+	create procedure proc_cal_total_amount_by_order (order_id_in int)
+	begin 
+		select p.category from products p
+		join orderdetails d on p.product_id = d.product_id
+		join orders o on d.order_id = o.order_id 
+		where o.order_id = order_id_in;
+	end //
+delimiter ;
+
+call proc_cal_total_amount_by_order(2);
+
+-- 10. Tạo trigger có tên trigger_after_insert_order_details để tự động cập nhật số lượng sản phẩm trong kho mỗi khi thêm một chi tiết đơn hàng mới.
+-- Nếu số lượng trong kho không đủ thì ném ra thông báo lỗi “Số lượng sản phẩm trong kho không đủ” và hủy thao tác chèn.
+delimiter //
+drop trigger if exists trigger_after_insert_order_details //
+	create trigger trigger_after_insert_order_details 
+    before insert on orderdetails
+    for each row 
+    begin
+		declare stock int;
+        
+        select quantity into stock from products where product_id = new.product_id;
+        
+		if new.quantity > stock then
+			signal sqlstate '45000'
+            set message_text = 'Số lượng sản phẩm không đủ !!!';
+		else 
+			update products 
+            set quantity = quantity - new.quantity
+            where product_id = new.product_id;
+		end if;
+    end //
+delimiter ;
+
+insert into orderdetails (order_id, product_id, quantity, unit_price) 
+values (3, 4, 10, 3000000);
+
+select * from orderdetails;
